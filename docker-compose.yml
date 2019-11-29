@@ -1,0 +1,70 @@
+version: '2'
+services:
+  proxy:
+    image: traefik:v1.7.14
+    command: --web --docker --logLevel=INFO
+    restart: unless-stopped
+    networks:
+      - web
+    ports:
+      - "80:80"
+      - "443:443"
+    expose:
+    # traefik dashboard port
+      - 8080
+    labels:
+      - "traefik.enable: true"
+      - "traefik.frontend.rule=Host:traefik.emonindonesia.com"
+      - "traefik.frontend.auth.basic=admin:$$apr1$$nyM/Ea9v$$AdaxCjNoM7BLcjRVZAqN8."
+      - "traefik.port=8080"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - ./traefik.toml:/traefik.toml 
+            
+  influxdb:
+    image: influxdb:latest
+    #command: bash -c "influxd 2>&1 | tee -a /var/log/influxdb/influxdb.log"
+    ports:
+      - '8086:8086'
+    volumes:
+      #- ./logs:/var/log/influxdb
+      - influxdb-storage:/var/lib/influxdb
+    environment:
+      - INFLUXDB_DB=emon
+      - INFLUXDB_HTTP_AUTH_ENABLED=true
+      - INFLUXDB_ADMIN_USER=admin
+      - INFLUXDB_ADMIN_PASSWORD=5up3down6left
+    labels:
+      - traefik.enable=true
+      - traefik.port=8086
+      - traefik.docker.network=web
+      - traefik.backend=influxdb
+
+  grafana:
+    image: grafana/grafana:latest
+    ports:
+      - '3002:3002'
+    volumes:
+      - grafana-storage:/var/lib/grafana
+      - ./grafana-provisioning/:/etc/grafana/provisioning
+    depends_on:
+      - influxdb
+    environment:
+      - GF_SERVER_HTTP_PORT=3002
+      - GF_DEFAULT_INSTANCE_NAME=emon_docker
+    labels:
+      - traefik.enable=true
+      - traefik.frontend.rule=Host:monitor.emonindonesia.com
+      - traefik.port=3002
+      - traefik.docker.network=web
+      - traefik.backend=monitor
+networks:
+  default:
+    external:
+      name: web
+  web:
+    external: true
+
+volumes:
+  influxdb-storage:
+  grafana-storage:
