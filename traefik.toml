@@ -1,0 +1,20 @@
+debug = false
+
+logLevel = "ERROR"
+defaultEntryPoints = ["http"]
+
+[entryPoints]
+  [entryPoints.dashboard]
+  address = ":8080"
+  [entryPoints.http]
+  address = ":80"
+
+[api]
+  entrypoint="dashboard"
+
+[retry]
+
+[docker]
+  domain = "traefik"
+  watch = true
+  swarmmode = false
