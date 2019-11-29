@@ -9,6 +9,7 @@ services:
     ports:
       - "80:80"
       - "443:443"
+      - "8080:8080"
     expose:
     # traefik dashboard port
       - 8080
